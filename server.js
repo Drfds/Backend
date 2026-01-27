@@ -15,10 +15,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
 
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "DB_karnbarn",
+  host: "sql12.freesqldatabase.com",
+  user: "sql12815257",
+  password: "wPRWbKqmDU",
+  database: "sql12815257",
   multipleStatements: true
 })
 
