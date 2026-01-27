@@ -1,5 +1,4 @@
-ALTER TABLE assignments
-  ADD COLUMN IF NOT EXISTS teacher_name VARCHAR(255) DEFAULT NULL;
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS teacher_name VARCHAR(255) DEFAULT NULL;
 
 -- populate teacher_name from created_by when possible
 UPDATE assignments a

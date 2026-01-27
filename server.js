@@ -5,7 +5,10 @@ const cors = require("cors")
 const jwt = require("jsonwebtoken")
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: "https://karnbarn.สุรศักดิ์มนตรี.com",
+  credentials: true
+}))
 app.use(express.json())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
@@ -66,6 +69,18 @@ db.connect((err) => {
   db.query(`ALTER TABLE assignments ADD INDEX idx_assignments_created_by (created_by)`, (e) => { /* ignore errors */ })
 
   console.log('DB connected')
+})
+
+app.get('/', (req, res) => {
+  res.send('API is running 🚀')
+})
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true })
+})
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' })
 })
 
 // helpers
@@ -276,6 +291,6 @@ app.delete('/assignments/:id/not-submitted/:studentId', authenticateToken, requi
 })
 
 // ensure server listens
-app.listen(PORT, () => {
-  console.log(`Backend running :${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend running on 0.0.0.0:${PORT}`)
 })
