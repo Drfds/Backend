@@ -7,9 +7,13 @@ const jwt = require("jsonwebtoken")
 const app = express()
 app.use(cors({
   origin: "https://karnbarn.สุรศักดิ์มนตรี.com",
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }))
 app.use(express.json())
+
+app.options("*", cors())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
