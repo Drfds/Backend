@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY ux_users_email (email),
   UNIQUE KEY ux_users_username (username)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ถ้ามีตาราง users อยู่แล้วแต่ยังไม่มีคอลัมน์ role (รันแยก ถ้ามี error ให้ตรวจสอบ)
 ALTER TABLE users ADD COLUMN role ENUM('teacher','parent','student') NOT NULL DEFAULT 'student';

@@ -6,25 +6,28 @@ const jwt = require("jsonwebtoken")
 
 const app = express()
 app.use(cors({
-  origin: "https://karnbarn.สุรศักดิ์มนตรี.com",
+  origin: "https://karnbarn.xn--12c2bdp3bjf8aq6e9aq2a00a.com",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
 app.use(express.json())
 
-app.options("*", cors())
-
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: "sql12.freesqldatabase.com",
   user: "sql12815257",
   password: "wPRWbKqmDU",
   database: "sql12815257",
-  multipleStatements: true
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 })
+
 
 // Try to ensure necessary schema exists (best to run proper migrations in production)
 const initSql = ` 
@@ -43,10 +46,11 @@ ALTER TABLE users
 `
 // Note: MySQL doesn't support "ADD COLUMN IF NOT EXISTS" on older versions; run ALTER in try/catch below.
 
-db.connect((err) => {
+db.query('SELECT 1', (err) => {
   if (err) {
-    console.error('DB connect error', err)
-    process.exit(1)
+    console.error('DB init failed', err.message)
+  } else {
+    console.log('DB pool ready')
   }
   // create assignments table if not exists (include created_by and teacher_name)
   db.query(`
@@ -77,10 +81,6 @@ db.connect((err) => {
 
 app.get('/', (req, res) => {
   res.send('API is running 🚀')
-})
-
-app.get("/health", (req, res) => {
-  res.json({ ok: true })
 })
 
 app.get('/health', (req, res) => {

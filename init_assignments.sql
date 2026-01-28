@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS assignments (
   created_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
-);
+  teacher_name VARCHAR(255) DEFAULT NULL;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE assignments ADD INDEX idx_assignments_created_by (created_by);
 
