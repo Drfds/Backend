@@ -19,7 +19,7 @@ app.use(cors({
 //   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 //   allowedHeaders: ["Content-Type", "Authorization"]
 // }))
-// app.use(express.json())
+app.use(express.json())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
@@ -87,11 +87,23 @@ db.query('SELECT 1', (err) => {
   `, (e) => { if (e) console.warn('create assignments table warning', e.message) })
 
   // try to add role column (ignore error if exists)
-  db.query(`ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'student'`, (e) => {
-    if (e && e.code !== 'ER_DUP_FIELDNAME' && e.errno !== 1060) {
-      console.warn('alter users add role:', e.message)
+  db.query(`SHOW TABLES LIKE 'users'`, (err, rows) => {
+    if (err) return console.error(err)
+    if (rows.length === 0) {
+      console.error('users table not found')
+      return
     }
+
+    db.query(
+      `ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'student'`,
+      (e) => {
+        if (e && e.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('alter users add role:', e.message)
+        }
+      }
+    )
   })
+
 
   // ensure index on created_by (safe to run)
   db.query(`ALTER TABLE assignments ADD INDEX idx_assignments_created_by (created_by)`, (e) => { /* ignore errors */ })
@@ -139,7 +151,7 @@ app.post("/register", async (req, res) => {
   }
   try {
     const hash = await bcrypt.hash(password, 10)
-    const role = "student"
+    const role = "student"  // default role; can be extended to accept from req.body with validation
     const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`
     db.query(sql, [username, email, hash, role], (err, results) => {
       if (err) {
