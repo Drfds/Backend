@@ -5,13 +5,21 @@ const cors = require("cors")
 const jwt = require("jsonwebtoken")
 
 const app = express()
+
 app.use(cors({
   origin: "https://karnbarn.xn--12c2bdp3bjf8aq6e9aq2a00a.com",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
-app.use(express.json())
+
+// app.use(cors({
+//   origin: "http://localhost:5173",
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization"]
+// }))
+// app.use(express.json())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
@@ -27,6 +35,18 @@ const db = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 0
 })
+
+// const db = mysql.createPool({
+//   host: "localhost",
+//   user: "root",
+//   password: "",
+//   database: "DB_karnbarn",
+//   waitForConnections: true,
+//   connectionLimit: 10,
+//   queueLimit: 0,
+//   enableKeepAlive: true,
+//   keepAliveInitialDelay: 0
+// })
 
 
 // Try to ensure necessary schema exists (best to run proper migrations in production)
@@ -113,12 +133,13 @@ function requireRole(role) {
 
 // Register (accept role)
 app.post("/register", async (req, res) => {
-  const { username, email, password, role } = req.body
-  if (!username || !email || !password || !role) {
+  const { username, email, password } = req.body
+  if (!username || !email || !password) {
     return res.status(400).json({ message: "ข้อมูลไม่ครบ" })
   }
   try {
     const hash = await bcrypt.hash(password, 10)
+    const role = "student"
     const sql = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`
     db.query(sql, [username, email, hash, role], (err, results) => {
       if (err) {
