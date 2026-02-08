@@ -160,10 +160,10 @@ app.post("/register", async (req, res) => {
       }
       const user = { id: results.insertId, username, email, role }
       const token = signToken(user)
-      res.json({ message: "สมัครสำเร็จ", token, user })
+      res.json({ success: true, message: "สมัครสำเร็จ", token, user })
     })
   } catch (e) {
-    res.status(500).json({ message: 'Server error', error: e.message })
+    res.status(500).json({ success: false, message: 'Server error', error: e.message })
   }
 })
 
@@ -202,11 +202,11 @@ app.post("/login", (req, res) => {
       }
     }
 
-    if (!isMatch) return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" })
+    if (!isMatch) return res.status(401).json({ success: false, message: "รหัสผ่านไม่ถูกต้อง" })
 
     const userSafe = { id: user.id, username: user.username, email: user.email, role: user.role || 'student' }
     const token = signToken(userSafe)
-    res.json({ message: "เข้าสู่ระบบสำเร็จ", token, user: userSafe })
+    res.json({ success: true, message: "เข้าสู่ระบบสำเร็จ", token, user: userSafe })
   })
 })
 
