@@ -3,32 +3,34 @@ const mysql = require("mysql2")
 const bcrypt = require("bcrypt")
 const cors = require("cors")
 const jwt = require("jsonwebtoken")
+const https = require("https")
 
 const app = express()
 
-app.use(cors({
-  origin: "https://karnbarn.xn--12c2bdp3bjf8aq6e9aq2a00a.com",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}))
-
 // app.use(cors({
-//   origin: "http://localhost:5173",
+//   origin: "https://karnbarn.xn--12c2bdp3bjf8aq6e9aq2a00a.com",
 //   credentials: true,
 //   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 //   allowedHeaders: ["Content-Type", "Authorization"]
 // }))
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}))
 app.use(express.json())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret'
 const PORT = process.env.PORT || 3000
 
 const db = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "Dev04023?",
+  host: "192.168.1.54",
+  user: "aya",
+  password: "04023",
   database: "DB_karnbarn",
+  port: 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -143,12 +145,65 @@ function requireRole(role) {
   }
 }
 
+// Verify Turnstile CAPTCHA token
+function verifyTurnstile(token) {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify({
+      secret: '0x4AAAAAAC0l20K_99l9NX46oy_Ft08jxYI',
+      response: token
+    })
+
+    const options = {
+      hostname: 'challenges.cloudflare.com',
+      port: 443,
+      path: '/turnstile/v0/siteverify',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    }
+
+    const req = https.request(options, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data)
+          resolve(result.success === true)
+        } catch (e) {
+          resolve(false)
+        }
+      })
+    })
+
+    req.on('error', (e) => {
+      console.error('Turnstile verification error:', e)
+      resolve(false)
+    })
+
+    req.write(postData)
+    req.end()
+  })
+}
+
 // Register (accept role)
 app.post("/register", async (req, res) => {
-  const { username, email, password } = req.body
+  const { username, email, password, captchaToken } = req.body
   if (!username || !email || !password) {
     return res.status(400).json({ message: "ข้อมูลไม่ครบ" })
   }
+
+  // Verify CAPTCHA token
+  if (!captchaToken) {
+    return res.status(400).json({ message: "CAPTCHA verification required" })
+  }
+
+  const isCaptchaValid = await verifyTurnstile(captchaToken)
+  if (!isCaptchaValid) {
+    return res.status(400).json({ message: "CAPTCHA verification failed" })
+  }
+
   try {
     const hash = await bcrypt.hash(password, 10)
     const role = "student"  // default role; can be extended to accept from req.body with validation
@@ -168,9 +223,19 @@ app.post("/register", async (req, res) => {
 })
 
 // Login -> return token + user
-app.post("/login", (req, res) => {
-  const { email, password } = req.body
+app.post("/login", async (req, res) => {
+  const { email, password, captchaToken } = req.body
   if (!email || !password) return res.status(400).json({ message: "ข้อมูลไม่ครบ" })
+
+  // Verify CAPTCHA token
+  if (!captchaToken) {
+    return res.status(400).json({ message: "CAPTCHA verification required" })
+  }
+
+  const isCaptchaValid = await verifyTurnstile(captchaToken)
+  if (!isCaptchaValid) {
+    return res.status(400).json({ message: "CAPTCHA verification failed" })
+  }
 
   const sql = "SELECT * FROM users WHERE email = ?"
   db.query(sql, [email], async (err, results) => {
